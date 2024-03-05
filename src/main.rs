@@ -1,37 +1,80 @@
-use nanoid::nanoid;
-use std::{collections::HashMap, io::Write};
-use unicode_segmentation::UnicodeSegmentation;
+use rand::Rng;
+use std::{
+    collections::HashMap,
+    fs::OpenOptions,
+    io::{Seek, Write},
+    os::windows::fs::MetadataExt,
+};
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     let content = std::fs::read_to_string(&args[1]).unwrap();
-    let words: Vec<&str> = content.split_word_bounds().collect();
+    let mut words = Vec::<String>::new();
+    for (i, _) in content.char_indices() {
+        let mut str = String::new();
+        if i % 2 == 0 && i % 10 == 0 {
+            content.chars().enumerate().for_each(|(ic, cc)| {
+                if ic >= i - 10 && ic <= i - 1 {
+                    str.push(cc);
+                }
+            })
+        }
+        if str.len() >= 1 {
+            words.push(str)
+        }
+    }
+    let mut rng = rand::thread_rng();
     let mut codes: HashMap<&str, String> = HashMap::new();
-    let alphabet = [
-        '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h',
-        'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-        'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R',
-        'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', ':', '~', '!', '@', '#', '$', '%', '^', '&', '*',
-        '(', ')', '-', '_', '=', '+', ';', '/', '?', '.', ',', '<', '>', ' ', '\r', '\n', '\t',
-    ];
+    let mut vec = vec![];
+    for i in 32..=254u8 {
+        vec.push(i as char)
+    }
+    let alphabet: [char; 223] = vec.try_into().unwrap();
     for word in words.iter() {
-        *codes.entry(word).or_insert(nanoid![2, &alphabet]) += "";
+        let mut str = String::new();
+        str.push(alphabet[rng.gen_range(0..223usize)]);
+        if word.len() > 5 {
+            str.push(alphabet[rng.gen_range(0..223usize)]);
+        }
+        *codes.entry(word).or_insert(str) += "";
     }
     let mut vec_code_content = Vec::<String>::new();
+    let mut str_code_content = String::new();
+    let mut file = OpenOptions::new()
+        .write(true)
+        .truncate(true)
+        .create(true)
+        .open(format!(
+            "{}_compressed.{}",
+            &args[1].rsplit_once('.').unwrap().0,
+            &args[1].rsplit_once('.').unwrap().1
+        ))
+        .unwrap();
     for word in words.iter() {
         codes.iter().for_each(|c| {
-            if word != &&word.replace(*c.0, c.1) {
-                vec_code_content.push(word.replace(*c.0, c.1))
+            if word != &word.replace(*c.0, c.1) {
+                vec_code_content.push(word.replace(*c.0, c.1));
+                str_code_content = vec_code_content.clone().into_iter().collect::<String>();
+                file.rewind().unwrap();
+                file.set_len(0).unwrap();
+                file.write_all(str_code_content.as_bytes()).unwrap();
+                println!(
+                    "{:.3}kb",
+                    file.metadata().unwrap().file_size() as f32 / 1024f32
+                );
             }
         });
     }
-    let str_code_content = vec_code_content.into_iter().collect::<String>();
-    let file_path = format!(
-        "{}_compressed.{}",
-        &args[1].rsplit_once('.').unwrap().0,
-        &args[1].rsplit_once('.').unwrap().1
-    );
-    std::fs::File::create(file_path)
-        .unwrap()
-        .write(str_code_content.as_bytes())
+    let mut book_file = OpenOptions::new()
+        .write(true)
+        .truncate(true)
+        .create(true)
+        .open(format!(
+            "{}_book.{}",
+            &args[1].rsplit_once('.').unwrap().0,
+            &args[1].rsplit_once('.').unwrap().1
+        ))
+        .unwrap();
+    book_file
+        .write(format!("BOOK\n{:#?}", codes).as_bytes())
         .unwrap();
 }
