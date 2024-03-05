@@ -25,15 +25,15 @@ fn main() {
     let mut rng = rand::thread_rng();
     let mut codes: HashMap<&str, String> = HashMap::new();
     let mut vec = vec![];
-    for i in 32..=254u8 {
+    for i in 0..=255u8 {
         vec.push(i as char)
     }
-    let alphabet: [char; 223] = vec.try_into().unwrap();
+    let alphabet: [char; 256] = vec.try_into().unwrap();
     for word in words.iter() {
         let mut str = String::new();
-        str.push(alphabet[rng.gen_range(0..223usize)]);
+        str.push(alphabet[rng.gen_range(0..255usize)]);
         if word.len() > 5 {
-            str.push(alphabet[rng.gen_range(0..223usize)]);
+            str.push(alphabet[rng.gen_range(0..255usize)]);
         }
         *codes.entry(word).or_insert(str) += "";
     }
