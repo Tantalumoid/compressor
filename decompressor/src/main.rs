@@ -1,27 +1,23 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, str::from_utf8};
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
-    let content_file = std::fs::read_to_string(&args[1]).expect("can`t open file");
+    let mut content_file = std::fs::read_to_string(&args[1]).expect("can`t open file");
     let content_book = std::fs::read_to_string(&args[2]).expect("can`t open book");
-    let mut codes: HashMap<&str, String> = HashMap::new();
+    let mut codes: HashMap<&str, &str> = HashMap::new();
     for line in content_book.lines() {
         if line == "BOOK" || line == "{" || line == "}" {
             continue;
         }
         let line = &line[5..];
         let key = &line[..10];
-
-        let mut value = line[14..].to_string();
-        value = value[..value.len() - 2].replace('"', "");
+        let value = &line[14..line.len() - 2];
+        println!("{} --- {}", &value, &key);
         codes.insert(key, value);
     }
-    let mut decode_content_string = content_file.clone();
+    println!("{:?}", codes);
     for (k, v) in codes {
-        if content_file.replace(&v, k).contains(k) {
-            decode_content_string.push_str(&content_file.replace(&v, k));
-        }
-        println!("a a {content_file}")
+        content_file = content_file.replace(v, k)
     }
-    println!(" b b{decode_content_string}")
+    println!("{content_file}")
 }

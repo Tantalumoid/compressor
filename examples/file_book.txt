@@ -1,5 +1,5 @@
 BOOK
 {
-    "d!\r\nhello ": "ªç",
-    "hello worl": "\\õ",
+    "hello worl": "i_",
+    "d!--hello-": "4{",
 }

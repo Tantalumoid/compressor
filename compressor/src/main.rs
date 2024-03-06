@@ -14,8 +14,9 @@ fn main() {
         if i % 2 == 0 && i % 10 == 0 {
             content.chars().enumerate().for_each(|(ic, cc)| {
                 if ic >= i - 10 && ic <= i - 1 {
-                    str.push(cc);
+                    str = format!("{str}{cc}");
                 }
+                dbg!(cc);
             })
         }
         if str.len() >= 1 {
@@ -25,15 +26,15 @@ fn main() {
     let mut rng = rand::thread_rng();
     let mut codes: HashMap<&str, String> = HashMap::new();
     let mut vec = vec![];
-    for i in 0..=255u8 {
+    for i in 0..=127u8 {
         vec.push(i as char)
     }
-    let alphabet: [char; 256] = vec.try_into().unwrap();
+    let alphabet: [char; 128] = vec.try_into().unwrap();
     for word in words.iter() {
         let mut str = String::new();
-        str.push(alphabet[rng.gen_range(0..255usize)]);
+        str.push(alphabet[rng.gen_range(0..127usize)]);
         if word.len() > 5 {
-            str.push(alphabet[rng.gen_range(0..255usize)]);
+            str.push(alphabet[rng.gen_range(0..127usize)]);
         }
         *codes.entry(word).or_insert(str) += "";
     }
