@@ -9,14 +9,21 @@ fn main() {
     let args: Vec<String> = std::env::args().collect();
     let content = std::fs::read_to_string(&args[1]).unwrap();
     let mut words = Vec::<String>::new();
+    let mut chars = Vec::<char>::new();
     for (i, _) in content.char_indices() {
         let mut str = String::new();
-        if i % 2 == 0 && i % 10 == 0 {
+        dbg!(content.len() - content.len() % 10);
+        if i % 10 == 0 {
             content.chars().enumerate().for_each(|(ic, cc)| {
-                if ic >= i - 10 && ic <= i - 1 {
+                if i >= 10 && ic >= i - 10 && ic <= i - 1 {
                     str = format!("{str}{cc}");
                 }
-                dbg!(cc);
+            })
+        } else if i + 1 == content.len() - content.len() % 10 {
+            content.chars().enumerate().for_each(|(ic, cc)| {
+                if ic > i {
+                    str = format!("{str}{cc}");
+                }
             })
         }
         if str.len() >= 1 {

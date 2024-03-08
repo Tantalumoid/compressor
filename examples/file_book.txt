@@ -1,5 +1,6 @@
 BOOK
 {
-    "hello worl": "i_",
-    "d!--hello-": "4{",
+    "hello worl": "t\u{1e}",
+    "d!--yesss-": "Z\\",
+    "!!": "J",
 }
