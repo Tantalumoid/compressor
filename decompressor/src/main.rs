@@ -15,9 +15,10 @@ fn main() {
         println!("{} --- {}", &value, &key);
         codes.insert(key, value);
     }
-    println!("{:?}", codes);
     for (k, v) in codes {
+        println!("{k}\n{v}");
         content_file = content_file.replace(v, k)
     }
     println!("{content_file}")
+    // if code == 0 !! delete nahuy
 }
