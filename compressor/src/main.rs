@@ -91,13 +91,7 @@ fn main() {
     book_file.write(b"BOOK\n{\n").expect("can`t write book");
     for (key, value) in codes {
         book_file
-            .write(
-                &format!(
-                    "\tKey-Start{:?}Key-End : Value-Start{:?}Value-End\n",
-                    key, value
-                )
-                .as_bytes(),
-            )
+            .write(&format!("   {:?}{:?}\n", key, value).as_bytes())
             .expect("can`t write book data}");
     }
     book_file.write(b"}\n").expect("can`t write book end");
