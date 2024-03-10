@@ -13,9 +13,9 @@ fn main() {
                     buf.push(cc as u8)
                 }
             })
-        } else if content.len() - i + 1 < 10 {
+        } else if i + 1 == content.len() - 9 {
             content.chars().enumerate().for_each(|(ic, cc)| {
-                if ic >= content.len() - ((content.len() - 1) % 10) - 1 {
+                if ic >= i + 1 {
                     buf.push(cc as u8)
                 }
             })
