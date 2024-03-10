@@ -1,10 +1,6 @@
+use ordered_hash_map::OrderedHashMap;
 use rand::Rng;
-use std::{
-    collections::HashMap,
-    fs::OpenOptions,
-    io::{Seek, Write},
-    os::windows::fs::MetadataExt,
-};
+use std::{fs::OpenOptions, io::Write, str::from_utf8};
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     let content = std::fs::read_to_string(&args[1]).expect("can`t read file");
@@ -13,11 +9,11 @@ fn main() {
         let mut buf = Vec::<u8>::new();
         if i % 10 == 0 {
             content.chars().enumerate().for_each(|(ic, cc)| {
-                if i >= 10 && ic >= i - 10 && ic <= i - 1 {
+                if ic >= i - 10 && ic <= i - 1 {
                     buf.push(cc as u8)
                 }
             })
-        } else if i + 1 == content.len() - content.len() % 10 {
+        } else if content.len() - i + 1 < 10 {
             content.chars().enumerate().for_each(|(ic, cc)| {
                 if ic >= content.len() - ((content.len() - 1) % 10) - 1 {
                     buf.push(cc as u8)
@@ -26,32 +22,41 @@ fn main() {
         }
         if buf.len() >= 1 {
             while buf.len() < 10 {
-                buf.push(b' ');
+                buf.push(
+                    from_utf8(&[0])
+                        .expect("can`t write byte 0")
+                        .as_bytes()
+                        .get(0)
+                        .expect("can`t get byte 0")
+                        .to_owned(),
+                );
             }
             bytes.push(buf.try_into().expect("can`t push bytes"))
         }
     }
     let mut rng = rand::thread_rng();
-    let mut codes: HashMap<[u8; 10], [u8; 10]> = HashMap::new();
+    let mut codes: OrderedHashMap<[u8; 10], [u8; 10]> = OrderedHashMap::new();
     let mut vec = vec![];
-    for i in 1..=128u8 {
+    for i in 0..128u8 {
         vec.push(i)
     }
     let alphabet: [u8; 128] = vec.try_into().expect("can`t make alphabet");
     for byte in bytes.to_owned() {
         let code: [u8; 10] = [
-            alphabet[rng.gen_range(0..127usize)],
-            alphabet[rng.gen_range(0..127usize)],
-            alphabet[0],
-            alphabet[0],
-            alphabet[0],
-            alphabet[0],
-            alphabet[0],
-            alphabet[0],
-            alphabet[0],
-            alphabet[0],
+            alphabet[rng.gen_range(0..128usize)],
+            alphabet[rng.gen_range(0..128usize)],
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
         ];
-        codes.entry(byte).or_insert(code);
+        if !codes.contains_key(&byte) {
+            let _ = codes.insert(byte, code);
+        }
     }
     let mut file = OpenOptions::new()
         .write(true)
@@ -66,16 +71,12 @@ fn main() {
     for (i, byte) in bytes.clone().iter_mut().enumerate() {
         for (key, value) in codes.to_owned() {
             if byte.to_owned() == key {
-                let _ = std::mem::replace(bytes.get_mut(i).unwrap(), value);
-                file.rewind().expect("can`t rewind file");
-                file.set_len(0).expect("can`t set len for file");
-                file.write_all(&bytes[i]).expect("can`t write to file");
-                println!(
-                    "{:.3}kb",
-                    file.metadata().unwrap().file_size() as f32 / 1024f32
-                );
+                let _ = std::mem::replace(bytes.get_mut(i).expect("can`t get mut bytes"), value);
             }
         }
+    }
+    for byte in bytes.iter() {
+        file.write_all(&byte[..2]).expect("can`t write to file");
     }
 
     let mut book_file = OpenOptions::new()
@@ -91,7 +92,7 @@ fn main() {
     book_file.write(b"BOOK\n{\n").expect("can`t write book");
     for (key, value) in codes {
         book_file
-            .write(&format!("   {:?}{:?}\n", key, value).as_bytes())
+            .write(&format!("   {:?}{:?}\n", &key[..], &value[..2]).as_bytes())
             .expect("can`t write book data}");
     }
     book_file.write(b"}\n").expect("can`t write book end");

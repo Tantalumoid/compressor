@@ -1,18 +1,11 @@
-use std::{collections::HashMap, str::from_utf8};
+use std::{fs::OpenOptions, io::Write, str::from_utf8};
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
-    let mut content_file = std::fs::read_to_string(&args[1]).expect("can`t open file");
+    let content_file = std::fs::read_to_string(&args[1]).expect("can`t open file");
     let content_book = std::fs::read_to_string(&args[2]).expect("can`t open book");
-    let mut codes: HashMap<String, String> = HashMap::new();
+    let mut decode_content = String::new();
     for line in content_book.lines() {
-        //BOOK
-        //{
-        //   [43, 104, 101, 108, 108, 111, 13, 10, 32, 32]>/[126, 104, 1, 1, 1, 1, 1, 1, 1, 1]/
-        //   [104, 101, 108, 108, 111, 32, 119, 111, 114, 108]>/[32, 76, 1, 1, 1, 1, 1, 1, 1, 1]/
-        //   [100, 33, 45, 45, 121, 101, 115, 115, 115, 45]>/[61, 36, 1, 1, 1, 1, 1, 1, 1, 1]/
-        //   [33, 33, 33, 33, 33, 33, 33, 33, 33, 33]>/[68, 58, 1, 1, 1, 1, 1, 1, 1, 1]/
-        //}
         if line == "BOOK" || line == "{" || line == "}" {
             continue;
         }
@@ -20,12 +13,42 @@ fn main() {
         let mut value = String::new();
         for (i, char) in line.chars().enumerate() {
             if char == ']' {
-                key = line[4..i].to_string();
-                value = line[i + 2..].to_string().replace("]", "");
+                key = line[4..i].chars().rev().collect::<String>();
+                key.push(' ');
+                key = key
+                    .chars()
+                    .rev()
+                    .collect::<String>()
+                    .replace(", ", " ")
+                    .replace(" 0", "");
+                value = line[i + 2..].replace("]", "");
                 break;
             }
         }
-        codes.insert(key, value);
+        value = value.replace(", ", " ");
+        let mut bytes = Vec::<u8>::new();
+        key.split_whitespace()
+            .for_each(|str| bytes.push(str.parse().expect("can`t parse book")));
+        let key = from_utf8(&bytes[..]).expect("can`t get utf8");
+        let mut bytes = Vec::<u8>::new();
+        value
+            .split_whitespace()
+            .for_each(|str| bytes.push(str.parse().expect("can`t parse book")));
+        let value = from_utf8(&bytes[..]).expect("can`t get utf8");
+        if content_file.contains(&value) {
+            decode_content += &key;
+        }
     }
-    dbg!(codes);
+    OpenOptions::new()
+        .write(true)
+        .truncate(true)
+        .create(true)
+        .open(format!(
+            "{}_decode.{}",
+            &args[1].rsplit_once('.').expect("can`t split path 0").0,
+            &args[1].rsplit_once('.').expect("can`t split path 1").1
+        ))
+        .expect("can`t create decode of file")
+        .write_all(decode_content.as_bytes())
+        .expect("can`t write file");
 }
